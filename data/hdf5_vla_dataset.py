@@ -18,8 +18,8 @@ class HDF5VLADataset:
     def __init__(self) -> None:
         # [Modify] The path to the HDF5 dataset directory
         # Each HDF5 file contains one episode
-        HDF5_DIR = "data/datasets/agilex/rdt_data/"
-        self.DATASET_NAME = "agilex"
+        HDF5_DIR = "/root/autodl-tmp/needmove/hdf5/"
+        self.DATASET_NAME = "mylerobot"
         
         self.file_paths = []
         for root, _, files in os.walk(HDF5_DIR):
@@ -134,18 +134,18 @@ class HDF5VLADataset:
             
             # Load the instruction
             dir_path = os.path.dirname(file_path)
-            with open(os.path.join(dir_path, 'expanded_instruction_gpt-4-turbo.json'), 'r') as f_instr:
-                instruction_dict = json.load(f_instr)
+            #with open(os.path.join(dir_path, 'instruction.txt'), 'r') as f_instr:
+            #    instruction_dict = json.load(f_instr)
             # We have 1/3 prob to use original instruction,
             # 1/3 to use simplified instruction,
             # and 1/3 to use expanded instruction.
-            instruction_type = np.random.choice([
-                'instruction', 'simplified_instruction', 'expanded_instruction'])
-            instruction = instruction_dict[instruction_type]
-            if isinstance(instruction, list):
-                instruction = np.random.choice(instruction)
+            #instruction_type = np.random.choice([
+            #    'instruction', 'simplified_instruction', 'expanded_instruction'])
+            #instruction = instruction_dict[instruction_type]
+            #if isinstance(instruction, list):
+            #    instruction = np.random.choice(instruction)
             # You can also use precomputed language embeddings (recommended)
-            # instruction = "path/to/lang_embed.pt"
+            instruction = "/root/autodl-tmp/rdt/RoboticsDiffusionTransformer/outs/handover_pan.pt"
             
             # Assemble the meta
             meta = {
@@ -157,10 +157,10 @@ class HDF5VLADataset:
             
             # Rescale gripper to [0, 1]
             qpos = qpos / np.array(
-               [[1, 1, 1, 1, 1, 1, 4.7908, 1, 1, 1, 1, 1, 1, 4.7888]] 
+               [[180, 180, 180, 180, 180, 180]]
             )
             target_qpos = f['action'][step_id:step_id+self.CHUNK_SIZE] / np.array(
-               [[1, 1, 1, 1, 1, 1, 11.8997, 1, 1, 1, 1, 1, 1, 13.9231]] 
+               [[180, 180, 180, 180, 180, 180]]
             )
             
             # Parse the state and action
@@ -180,14 +180,8 @@ class HDF5VLADataset:
             def fill_in_state(values):
                 # Target indices corresponding to your state space
                 # In this example: 6 joints + 1 gripper for each arm
-                UNI_STATE_INDICES = [
-                    STATE_VEC_IDX_MAPPING[f"left_arm_joint_{i}_pos"] for i in range(6)
-                ] + [
-                    STATE_VEC_IDX_MAPPING["left_gripper_open"]
-                ] + [
+                UNI_STATE_INDICES =  [
                     STATE_VEC_IDX_MAPPING[f"right_arm_joint_{i}_pos"] for i in range(6)
-                ] + [
-                    STATE_VEC_IDX_MAPPING["right_gripper_open"]
                 ]
                 uni_vec = np.zeros(values.shape[:-1] + (self.STATE_DIM,))
                 uni_vec[..., UNI_STATE_INDICES] = values
@@ -222,8 +216,8 @@ class HDF5VLADataset:
             cam_high_mask = np.array(
                 [False] * (self.IMG_HISORY_SIZE - valid_len) + [True] * valid_len
             )
-            cam_left_wrist = parse_img('cam_left_wrist')
-            cam_left_wrist_mask = cam_high_mask.copy()
+            cam_left_wrist = np.zeros((self.IMG_HISORY_SIZE, 0, 0, 0))#parse_img('cam_right_wrist')
+            cam_left_wrist_mask = [False, False]#cam_high_mask.copy()
             cam_right_wrist = parse_img('cam_right_wrist')
             cam_right_wrist_mask = cam_high_mask.copy()
             
@@ -281,10 +275,10 @@ class HDF5VLADataset:
             
             # Rescale gripper to [0, 1]
             qpos = qpos / np.array(
-               [[1, 1, 1, 1, 1, 1, 4.7908, 1, 1, 1, 1, 1, 1, 4.7888]] 
+               [[180, 180, 180, 180, 180, 180]]
             )
             target_qpos = f['action'][:] / np.array(
-               [[1, 1, 1, 1, 1, 1, 11.8997, 1, 1, 1, 1, 1, 1, 13.9231]] 
+               [[180, 180, 180, 180, 180, 180]]
             )
             
             # Parse the state and action
@@ -295,15 +289,9 @@ class HDF5VLADataset:
             def fill_in_state(values):
                 # Target indices corresponding to your state space
                 # In this example: 6 joints + 1 gripper for each arm
-                UNI_STATE_INDICES = [
-                    STATE_VEC_IDX_MAPPING[f"left_arm_joint_{i}_pos"] for i in range(6)
-                ] + [
-                    STATE_VEC_IDX_MAPPING["left_gripper_open"]
-                ] + [
+                UNI_STATE_INDICES =  [
                     STATE_VEC_IDX_MAPPING[f"right_arm_joint_{i}_pos"] for i in range(6)
-                ] + [
-                    STATE_VEC_IDX_MAPPING["right_gripper_open"]
-                ]
+                ] 
                 uni_vec = np.zeros(values.shape[:-1] + (self.STATE_DIM,))
                 uni_vec[..., UNI_STATE_INDICES] = values
                 return uni_vec
@@ -321,3 +309,4 @@ if __name__ == "__main__":
     for i in range(len(ds)):
         print(f"Processing episode {i}/{len(ds)}...")
         ds.get_item(i)
+        break

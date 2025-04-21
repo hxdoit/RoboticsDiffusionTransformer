@@ -61,5 +61,7 @@
     "agilex": 25,
     "rh20t": 10,
     "calvin": 30,
-    "bridgev2": 5
+    "bridgev2": 5,
+    "austin_buds_dataset_converted_externally_to_rlds_hdf5": 20,
+    "mylerobot": 30 
 }
